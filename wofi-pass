@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+shopt -s nullglob globstar
+
+_trim() {
+    local var="$*"
+    # remove leading whitespace characters
+    var="${var#"${var%%[![:space:]]*}"}"
+    # remove trailing whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
+}
+
+_parse_fields() {
+	IFS=$'\n'
+	fields="$(pass show $password | tail -n +2 | cut -d: -f1 -s)"
+	if [[ $typeit -eq 1 ]]; then
+		printf "autotype\n"
+	fi
+	printf "password\n"
+	for line in $fields; do
+		if [[ $line == "otpauth" ]]; then
+			printf "OTP\n"
+		else
+			printf "$line\n"
+		fi
+	done
+	unset IFS
+}
+
+_pass_field() {
+	IFS=$'\n'
+	plaintext="$(pass show $password | tail -n +2)"
+	for line in $plaintext; do
+		if [[ $line == $1:* ]]; then
+			printf "$(_trim "$(printf "$line" | cut -d: -f2 -s)")"
+		fi
+	done
+	unset IFS
+}
+
+_pass_get() {
+	if [[ $1 == "password" ]]; then
+		pass show "$password" | { IFS= read -r pass; printf %s "$pass"; }
+	elif [[ $1 == "OTP" ]]; then
+		pass otp "$password" | tail -n1 | { IFS= read -r pass; printf %s "$pass"; }
+	else
+		printf "$(_pass_field $1)"
+	fi
+}
+
+typeit=0
+if [[ $1 == "--type" ]]; then
+	typeit=1
+	shift
+fi
+
+prefix=${PASSWORD_STORE_DIR-~/.password-store}
+password_files=( "$prefix"/**/*.gpg )
+password_files=( "${password_files[@]#"$prefix"/}" )
+password_files=( "${password_files[@]%.gpg}" )
+
+password=$(printf '%s\n' "${password_files[@]}" | wofi -i --dmenu "$@")
+[[ -n $password ]] || exit
+field_list="$(_parse_fields)"
+field=$(printf "$field_list" | wofi -i --dmenu)
+echo $field
+
+if [[ $typeit -eq 0 ]]; then
+	wl-copy "$(_pass_get $field)"
+else
+	if [[ $field == "autotype" ]]; then
+		_pass_get "username" | ydotool type --file -
+		printf "\t" | ydotool type --file -
+		_pass_get "password" | ydotool type --file -
+		printf "\n" | ydotool type --file -
+	else
+		_pass_get $field | ydotool type --file -
+	fi
+fi
