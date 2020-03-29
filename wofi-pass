@@ -60,10 +60,10 @@ password_files=( "$prefix"/**/*.gpg )
 password_files=( "${password_files[@]#"$prefix"/}" )
 password_files=( "${password_files[@]%.gpg}" )
 
-password=$(printf '%s\n' "${password_files[@]}" | wofi -i --dmenu "$@")
+password=$(printf '%s\n' "${password_files[@]}" | wofi --dmenu "$@")
 [[ -n $password ]] || exit
 field_list="$(_parse_fields)"
-field=$(printf "$field_list" | wofi -i --dmenu)
+field=$(printf "$field_list" | wofi --dmenu)
 echo $field
 
 if [[ $typeit -eq 0 ]]; then
