@@ -26,6 +26,9 @@ _parse_fields() {
 			field_list+="$line\n"
 		fi
 	done
+	if [[ $typeit -eq 1 ]] && [[ $has_username -eq 1 ]]; then
+		printf "autotype\n"
+	fi
 	printf "$field_list"
 	unset IFS
 }
