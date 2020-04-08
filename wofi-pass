@@ -20,13 +20,12 @@ _parse_fields() {
 			field_list+="$line\n"
 		elif [[ $line == "otpauth" ]]; then
 			field_list+="OTP\n"
+		elif [[ $line == autotype_always ]]; then
+			autotype=1
 		else
 			field_list+="$line\n"
 		fi
 	done
-	if [[ $typeit -eq 1 ]] && [[ $has_username -eq 1 ]]; then
-		printf "autotype\n"
-	fi
 	printf "$field_list"
 	unset IFS
 }
@@ -54,20 +53,22 @@ _pass_get() {
 
 _usage() {
 	printf "Usage: wofi-pass [options]\n"
-	printf "	-h, --help		show this help message\n"
-	printf "	-s, --squash-choice	don't show field choice if password file only contains password\n"
-	printf "	-t, --type		type the selection instead of copying to clipboard\n"
+	printf "	-a, --autotype	autotype whatever entry is chosen\n"
+	printf "	-h, --help	show this help message\n"
+	printf "	-s, --squash	don't show field choice if password file only contains password\n"
+	printf "	-t, --type	type the selection instead of copying to clipboard\n"
 }
 
 shopt -s nullglob globstar
 
-OPTS="$(getopt --options hst --longoptions help,squash-choice,type -n 'wofi-pass' -- "$@")"
+OPTS="$(getopt --options ahst --longoptions autotype,help,squash,type -n 'wofi-pass' -- "$@")"
 eval set -- "$OPTS"
 while true; do
   case "$1" in
-    -h | --help					) help=1; shift ;;
-    -s | --squash-choice) squash=1; shift ;;
-		-t | --type				) typeit=1; shift;;
+    -a | --autotype	) autotype=1; shift ;;
+    -h | --help			) help=1; shift ;;
+    -s | --squash		) squash=1; shift ;;
+		-t | --type			) typeit=1; shift;;
     -- ) shift; break ;;
     * ) break ;;
   esac
@@ -87,16 +88,16 @@ password=$(printf '%s\n' "${password_files[@]}" | wofi --dmenu "$@")
 [[ -n $password ]] || exit
 field_list="$(_parse_fields)"
 field_count="$(echo "$field_list" | wc -l)"
-if [[ squash -eq 1 ]] && [[ field_count -eq 1 ]]; then
+if [[ $squash -eq 1 ]] && [[ $field_count -eq 1 ]]; then
 	field="password"
-else
+elif [[ $autotype -ne 1 ]]; then
 	field=$(printf "$field_list" | wofi --dmenu)
 fi
 
 if [[ $typeit -eq 0 ]]; then
 	wl-copy "$(_pass_get $field)"
 else
-	if [[ $field == "autotype" ]]; then
+	if [[ $field == "autotype" ]] || [[ $autotype -eq 1 ]]; then
 		_pass_get "username" | ydotool type --file -
 		printf "\t" | ydotool type --file -
 		_pass_get "password" | ydotool type --file -
