@@ -2,9 +2,9 @@
 ```
 Usage: wofi-pass [options]
 	-a, --autotype	autotype whatever entry is chosen
-	-h, --help			show this help message
-	-s, --squash		don't show field choice if password file only contains password
-	-t, --type			type the selection instead of copying to clipboard
+	-h, --help	show this help message
+	-s, --squash	don't show field choice if password file only contains password
+	-t, --type	type the selection instead of copying to clipboard
 ```
 
 Since `wofi` isn't a drop-in replacement for `rofi`, I couldn't use 
