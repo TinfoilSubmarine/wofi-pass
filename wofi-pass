@@ -103,11 +103,10 @@ if [[ $typeit -eq 0 ]]; then
 	wl-copy "$(_pass_get $field)"
 else
 	if [[ $field == "autotype" ]] || [[ $autotype -eq 1 ]]; then
-		_pass_get "username" | ${TYPE_CMD}
-		printf "\t" | ${TYPE_CMD}
-		_pass_get "password" | ${TYPE_CMD}
-		printf "\n" | ${TYPE_CMD}
+		username=$(_pass_get "username")
+		password=$(_pass_get "password")
+		printf "%b\t%b\n" $username $password | $TYPE_CMD
 	else
-		_pass_get $field | ${TYPE_CMD}
+		_pass_get $field | $TYPE_CMD
 	fi
 fi
