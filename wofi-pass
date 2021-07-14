@@ -39,7 +39,7 @@ _pass_field() {
 	IFS=$'\n'
 	plaintext="$(pass show $password | tail -n +2)"
 	for line in $plaintext; do
-		if [[ $line == $1:* ]]; then
+		if [[ $line =~ ^${1}:* ]]; then
 			printf "$(_trim "$(printf "$line" | cut -d: -f1 -s --complement)")"
 		fi
 	done
@@ -52,7 +52,7 @@ _pass_get() {
 	elif [[ $1 == "OTP" ]]; then
 		pass otp "$password" | tail -n1 | { IFS= read -r pass; printf %s "$pass"; }
 	else
-		printf "$(_pass_field $1)"
+		printf "$(_pass_field $*)"
 	fi
 }
 
