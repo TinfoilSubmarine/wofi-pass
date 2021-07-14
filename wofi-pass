@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+TYPE_CMD="wtype -"
+
 _trim() {
     local var="$*"
     # remove leading whitespace characters
@@ -101,11 +103,11 @@ if [[ $typeit -eq 0 ]]; then
 	wl-copy "$(_pass_get $field)"
 else
 	if [[ $field == "autotype" ]] || [[ $autotype -eq 1 ]]; then
-		_pass_get "username" | ydotool type --file -
-		printf "\t" | ydotool type --file -
-		_pass_get "password" | ydotool type --file -
-		printf "\n" | ydotool type --file -
+		_pass_get "username" | ${TYPE_CMD}
+		printf "\t" | ${TYPE_CMD}
+		_pass_get "password" | ${TYPE_CMD}
+		printf "\n" | ${TYPE_CMD}
 	else
-		_pass_get $field | ydotool type --file -
+		_pass_get $field | ${TYPE_CMD}
 	fi
 fi

@@ -13,7 +13,7 @@ version of `passmenu` that accomplishes everything I needed from `rofi-pass`.
 
 ## What does it do?
 This script uses [wofi](https://hg.sr.ht/~scoopta/wofi) and 
-[ydotool](https://github.com/ReimuNotMoe/ydotool) to provide a completely 
+[wtype](https://github.com/atx/wtype) to provide a completely 
 Wayland-native way to conveniently use [pass](https://www.passwordstore.org/). 
 It provides the same search that `passmenu` does, but shows a second dialogue 
 that lets the user choose which field to copy/print.
