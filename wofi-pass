@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 TYPE_CMD="wtype -"
+help=0
+autotype=0
 
 _trim() {
     local var="$*"
@@ -36,14 +40,7 @@ _parse_fields() {
 }
 
 _pass_field() {
-	IFS=$'\n'
-	plaintext="$(pass show $password | tail -n +2)"
-	for line in $plaintext; do
-		if [[ $line =~ ^${1}:* ]]; then
-			printf "$(_trim "$(printf "$line" | cut -d: -f1 -s --complement)")"
-		fi
-	done
-	unset IFS
+	_trim "$(pass show "$password" | tail -n+2 | grep "^${*}:.*$" | cut -d: -f1 -s --complement)"
 }
 
 _pass_get() {
@@ -105,7 +102,7 @@ else
 	if [[ $field == "autotype" ]] || [[ $autotype -eq 1 ]]; then
 		username=$(_pass_get "username")
 		password=$(_pass_get "password")
-		printf "%b\t%b\n" $username $password | $TYPE_CMD
+		printf "%b\t%b\n" "${username}" "${password}" | $TYPE_CMD
 	else
 		_pass_get $field | $TYPE_CMD
 	fi
