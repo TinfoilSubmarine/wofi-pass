@@ -1,13 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-set -euo pipefail
+set -eu
 
 TYPE_CMD="wtype -"
 help=0
 autotype=0
 
 _trim() {
-    local var="$*"
+    var="$*"
     # remove leading whitespace characters
     var="${var#"${var%%[![:space:]]*}"}"
     # remove trailing whitespace characters
@@ -17,25 +17,26 @@ _trim() {
 
 _parse_fields() {
 	has_username=0
-	IFS=$'\n'
-	fields="$(pass show $password | tail -n +2 | cut -d: -f1 -s)"
-	field_list+="password\n"
+	# Note: \n can not be last, or it will be stripped by $()
+	IFS=$(printf '\n\t')
+	fields="$(pass show "$password" | tail -n +2 | cut -d: -f1 -s)"
+	field_list="${field_list}password\n"
 	for line in $fields; do
-		if [[ $line == "username" ]]; then
+		if [ "$line" = "username" ]; then
 			has_username=1
-			field_list+="$line\n"
-		elif [[ $line == "otpauth" ]]; then
-			field_list+="OTP\n"
-		elif [[ $line == autotype_always ]]; then
+			field_list="${field_list}$line\n"
+		elif [ "$line" = "otpauth" ]; then
+			field_list="${field_list}OTP\n"
+		elif [ "$line" = autotype_always ]; then
 			autotype=1
 		else
-			field_list+="$line\n"
+			field_list="${field_list}$line\n"
 		fi
 	done
-	if [[ $typeit -eq 1 ]] && [[ $has_username -eq 1 ]]; then
+	if [ "$typeit" -eq 1 ] && [ "$has_username" -eq 1 ]; then
 		printf "autotype\n"
 	fi
-	printf "$field_list"
+	printf '%s' "$field_list"
 	unset IFS
 }
 
@@ -44,12 +45,12 @@ _pass_field() {
 }
 
 _pass_get() {
-	if [[ $1 == "password" ]]; then
+	if [ "$1" = "password" ]; then
 		pass show "$password" | { IFS= read -r pass; printf %s "$pass"; }
-	elif [[ $1 == "OTP" ]]; then
+	elif [ "$1" = "OTP" ]; then
 		pass otp "$password" | tail -n1 | { IFS= read -r pass; printf %s "$pass"; }
 	else
-		printf "$(_pass_field $*)"
+		printf '%s' "$(_pass_field "$@")"
 	fi
 }
 
@@ -60,8 +61,6 @@ _usage() {
 	printf "	-s, --squash	don't show field choice if password file only contains password\n"
 	printf "	-t, --type	type the selection instead of copying to clipboard\n"
 }
-
-shopt -s nullglob globstar
 
 OPTS="$(getopt --options ahst --longoptions autotype,help,squash,type -n 'wofi-pass' -- "$@")"
 eval set -- "$OPTS"
@@ -76,34 +75,32 @@ while true; do
   esac
 done
 
-if [[ $help -eq 1 ]]; then
-	echo "$(_usage)" >&2
+if [ "$help" -eq 1 ]; then
+	_usage >&2
 	exit 0
 fi
 
 prefix=${PASSWORD_STORE_DIR-~/.password-store}
-password_files=( "$prefix"/**/*.gpg )
-password_files=( "${password_files[@]#"$prefix"/}" )
-password_files=( "${password_files[@]%.gpg}" )
+password_files="$(find "$prefix" -name "*.gpg" -execdir basename {} .gpg ';')"
 
-password=$(printf '%s\n' "${password_files[@]}" | wofi --dmenu "$@")
-[[ -n $password ]] || exit
+password=$(printf '%s' "$password_files" | wofi --dmenu "$@")
+[ -n "$password" ] || exit
 field_list="$(_parse_fields)"
 field_count="$(echo "$field_list" | wc -l)"
-if [[ $squash -eq 1 ]] && [[ $field_count -eq 1 ]]; then
+if [ "$squash" -eq 1 ] && [ "$field_count" -eq 1 ]; then
 	field="password"
-elif [[ $autotype -ne 1 ]]; then
-	field=$(printf "$field_list" | wofi --dmenu)
+elif [ "$autotype" -ne 1 ]; then
+	field=$(printf '%s' "$field_list" | wofi --dmenu)
 fi
 
-if [[ $typeit -eq 0 ]]; then
-	wl-copy "$(_pass_get $field)"
+if [ $typeit -eq 0 ]; then
+	wl-copy "$(_pass_get "$field")"
 else
-	if [[ $field == "autotype" ]] || [[ $autotype -eq 1 ]]; then
+	if [ "$field" = "autotype" ] || [ "$autotype" -eq 1 ]; then
 		username=$(_pass_get "username")
 		password=$(_pass_get "password")
 		printf "%b\t%b\n" "${username}" "${password}" | $TYPE_CMD
 	else
-		_pass_get $field | $TYPE_CMD
+		_pass_get "$field" | "$TYPE_CMD"
 	fi
 fi
