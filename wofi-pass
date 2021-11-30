@@ -2,9 +2,9 @@
 
 set -eu
 
-TYPE_CMD="wtype -"
 help=0
 autotype=0
+TYPE_CMD="wl-copy"
 
 _trim() {
     var="$*"
@@ -15,29 +15,33 @@ _trim() {
     printf '%s' "$var"
 }
 
+# the explicit newlines here are funky, but needed due to command substitution
+# stripping trailing newlines so `printf '%s\n' "$line"` cannot be used
 _parse_fields() {
 	has_username=0
-	# Note: \n can not be last, or it will be stripped by $()
-	IFS=$(printf '\n\t')
 	fields="$(pass show "$password" | tail -n +2 | cut -d: -f1 -s)"
-	field_list="${field_list}password\n"
+	field_list="password
+"
 	for line in $fields; do
 		if [ "$line" = "username" ]; then
 			has_username=1
-			field_list="${field_list}$line\n"
+			field_list="$field_list$line
+"
 		elif [ "$line" = "otpauth" ]; then
-			field_list="${field_list}OTP\n"
+			field_list="${field_list}OTP
+"
 		elif [ "$line" = autotype_always ]; then
 			autotype=1
 		else
-			field_list="${field_list}$line\n"
+			field_list="$field_list$line
+"
 		fi
 	done
-	if [ "$typeit" -eq 1 ] && [ "$has_username" -eq 1 ]; then
-		printf "autotype\n"
+	if [ "$TYPE_CMD" = "wtype -" ] && [ "$has_username" -eq 1 ]; then
+		printf "autotype
+"
 	fi
 	printf '%s' "$field_list"
-	unset IFS
 }
 
 _pass_field() {
@@ -69,7 +73,7 @@ while true; do
     -a | --autotype	) autotype=1; shift ;;
     -h | --help			) help=1; shift ;;
     -s | --squash		) squash=1; shift ;;
-		-t | --type			) typeit=1; shift;;
+		-t | --type			) TYPE_CMD="wtype -"; shift;;
     -- ) shift; break ;;
     * ) break ;;
   esac
@@ -83,24 +87,20 @@ fi
 prefix=${PASSWORD_STORE_DIR-~/.password-store}
 password_files="$(find "$prefix" -name "*.gpg" -execdir basename {} .gpg ';')"
 
-password=$(printf '%s' "$password_files" | wofi --dmenu "$@")
+password=$(printf '%s\n' "$password_files" | wofi --dmenu)
 [ -n "$password" ] || exit
 field_list="$(_parse_fields)"
 field_count="$(echo "$field_list" | wc -l)"
 if [ "$squash" -eq 1 ] && [ "$field_count" -eq 1 ]; then
 	field="password"
 elif [ "$autotype" -ne 1 ]; then
-	field=$(printf '%s' "$field_list" | wofi --dmenu)
+	field=$(printf '%s\n' "$field_list" | wofi --dmenu)
 fi
 
-if [ $typeit -eq 0 ]; then
-	wl-copy "$(_pass_get "$field")"
+if [ "$field" = "autotype" ] || [ "$autotype" -eq 1 ]; then
+	username=$(_pass_get "username")
+	password=$(_pass_get "password")
+	printf '%s\t%s\n' "$username" "$password" | $TYPE_CMD
 else
-	if [ "$field" = "autotype" ] || [ "$autotype" -eq 1 ]; then
-		username=$(_pass_get "username")
-		password=$(_pass_get "password")
-		printf "%b\t%b\n" "${username}" "${password}" | $TYPE_CMD
-	else
-		_pass_get "$field" | "$TYPE_CMD"
-	fi
+	_pass_get "$field" | $TYPE_CMD
 fi
