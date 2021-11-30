@@ -54,7 +54,7 @@ _pass_get() {
 	elif [ "$1" = "OTP" ]; then
 		pass otp "$password" | tail -n1 | { IFS= read -r pass; printf %s "$pass"; }
 	else
-		printf '%s' "$(_pass_field "$@")"
+		_pass_field "$@"
 	fi
 }
 
@@ -84,8 +84,8 @@ if [ "$help" -eq 1 ]; then
 	exit 0
 fi
 
-prefix=${PASSWORD_STORE_DIR-~/.password-store}
-password_files="$(find "$prefix" -name "*.gpg" -execdir basename {} .gpg ';')"
+cd "${PASSWORD_STORE_DIR:-$HOME/.password-store}"
+password_files="$(find . -name "*.gpg" | sed "s/^\.\/\(.*\)\.gpg$/\1/")"
 
 password=$(printf '%s\n' "$password_files" | wofi --dmenu)
 [ -n "$password" ] || exit
