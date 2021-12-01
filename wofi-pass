@@ -90,7 +90,7 @@ password_files="$(find . -name "*.gpg" | sed "s/^\.\/\(.*\)\.gpg$/\1/")"
 password=$(printf '%s\n' "$password_files" | wofi --dmenu)
 [ -n "$password" ] || exit
 field_list="$(_parse_fields)"
-field_count="$(echo "$field_list" | wc -l)"
+field_count="$(printf '%s' "$field_list" | wc -l)"
 if [ "$squash" -eq 1 ] && [ "$field_count" -eq 1 ]; then
 	field="password"
 elif [ "$autotype" -ne 1 ]; then
