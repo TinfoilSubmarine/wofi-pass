@@ -91,7 +91,7 @@ password=$(printf '%s\n' "$password_files" | wofi --dmenu)
 [ -n "$password" ] || exit
 field_list="$(_parse_fields)"
 field_count="$(printf '%s' "$field_list" | wc -l)"
-if [ "$squash" -eq 1 ] && [ "$field_count" -eq 1 ]; then
+if [ "$squash" -eq 1 ] && [ "$field_count" -eq 0 ]; then
 	field="password"
 elif [ "$autotype" -ne 1 ]; then
 	field=$(printf '%s\n' "$field_list" | wofi --dmenu)
