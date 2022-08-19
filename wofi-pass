@@ -3,11 +3,14 @@
 set -eu
 
 autotype=0
+copyisset=0
 fileisuser=0
 help=0
 squash=0
+typeisset=0
 
-TYPE_CMD="wl-copy"
+COPY_CMD="wl-copy"
+TYPE_CMD="wtype -"
 
 _trim() {
     var="$*"
@@ -46,7 +49,7 @@ _parse_fields() {
 "
 		fi
 	done
-	if [ "$TYPE_CMD" = "wtype -" ] && [ "$has_username" -eq 1 ]; then
+	if [ "$typeisset" -eq 1 ] && [ "$has_username" -eq 1 ]; then
 		printf "autotype
 "
 	fi
@@ -72,29 +75,53 @@ _pass_get() {
 _usage() {
 	printf "Usage: wofi-pass [options]\n"
 	printf "	-a, --autotype		autotype whatever entry is chosen\n"
+	printf "	-c, --copy [cmd]	copy to clipboard. Defaults to wl-copy if no cmd is given.\n"
 	printf "	-f, --fileisuser	use the name of the password file as username\n"
 	printf "	-h, --help		show this help message\n"
 	printf "	-s, --squash		don't show field choice if password file only contains password\n"
-	printf "	-t, --type		type the selection instead of copying to clipboard\n"
+	printf "	-t, --type [cmd]	type the selection instead of copying to clipboard.\n"
+	printf "				Defaults to wtype if no cmd is given.\n"
 }
 
-OPTS="$(getopt --options afhst --longoptions autotype,fileisuser,help,squash,type -n 'wofi-pass' -- "$@")"
+OPTS="$(getopt --options ac::fhst:: --longoptions autotype,copy::,fileisuser,help,squash,type:: -n 'wofi-pass' -- "$@")"
 eval set -- "$OPTS"
 while true; do
   case "$1" in
     -a | --autotype		) autotype=1; shift ;;
+		-c | --copy				)
+			copyisset=1
+			if [ -z "$2" ]; then
+				copy_cmd="$COPY_CMD"
+			else
+				copy_cmd="$2"
+			fi
+			shift 2;;
 		-f | --fileisuser	) fileisuser=1; shift;;
     -h | --help				) help=1; shift ;;
     -s | --squash			) squash=1; shift ;;
-		-t | --type				) TYPE_CMD="wtype -"; shift;;
-    -- ) shift; break ;;
-    * ) break ;;
+		-t | --type				)
+			typeisset=1
+			if [ -z "$2" ]; then
+				type_cmd="$TYPE_CMD"
+			else
+				type_cmd="$2"
+			fi
+			shift 2;;
+    --	) shift; break;;
+    *		) break;;
   esac
 done
 
 if [ "$help" -eq 1 ]; then
 	_usage >&2
 	exit 0
+fi
+
+if [ "$typeisset" -eq 1 ] && [ "$copyisset" -eq 1 ]; then
+	printf "copy and type cannot be used at same time. Please pass only one.\n"
+	exit 1
+elif [ "$typeisset" -eq 0 ] && [ "$copyisset" -eq 0 ]; then
+	printf "neither -c/--copy or -t/--type passed. Defaulting to copying with wl-copy."
 fi
 
 cd "${PASSWORD_STORE_DIR:-$HOME/.password-store}"
@@ -122,7 +149,15 @@ if [ "$field" = "autotype" ] || [ "$autotype" -eq 1 ]; then
 		username=$(_pass_get "username")
 	fi
 	password=$(_pass_get "password")
-	printf '%s\t%s\n' "$username" "$password" | $TYPE_CMD
+	if [ "$typeisset" -eq 1 ]; then
+		printf '%s\t%s\n' "$username" "$password" | $type_cmd
+	else
+		printf '%s\t%s\n' "$username" "$password" | $copy_cmd
+	fi
 else
-	_pass_get "$field" | $TYPE_CMD
+	if [ "$typeisset" -eq 1 ]; then
+		_pass_get "$field" | $type_cmd
+	else
+		_pass_get "$field" | $copy_cmd
+	fi
 fi

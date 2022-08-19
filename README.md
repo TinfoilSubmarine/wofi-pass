@@ -1,10 +1,13 @@
 # wofi-pass
 ```
 Usage: wofi-pass [options]
-	-a, --autotype	autotype whatever entry is chosen
-	-h, --help	show this help message
-	-s, --squash	don't show field choice if password file only contains password
-	-t, --type	type the selection instead of copying to clipboard
+	-a, --autotype		autotype whatever entry is chosen
+	-c, --copy [cmd]	copy to clipboard. Defaults to wl-copy if no cmd is given.
+	-f, --fileisuser	use the name of the password file as username
+	-h, --help		show this help message
+	-s, --squash		don't show field choice if password file only contains password
+	-t, --type [cmd]	type the selection instead of copying to clipboard.
+				Defaults to wtype if no cmd is given.
 ```
 
 Since `wofi` isn't a drop-in replacement for `rofi`, I couldn't use 
@@ -37,7 +40,3 @@ the field choice dialogue when there is only a password in the file.
 The `-t | --type` flag tells `wofi-pass` to type the choice instead of copying 
 to clipboard. This also enables the autotype choice which types 
 `username :tab password`.
-
-## Disclaimer???
-I know this script needs some work; it was mostly hacked together in an 
-afternoon to get the minimum functionality I needed.
