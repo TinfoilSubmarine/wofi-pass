@@ -2,8 +2,10 @@
 
 set -eu
 
-help=0
 autotype=0
+help=0
+squash=0
+
 TYPE_CMD="wl-copy"
 
 _trim() {
