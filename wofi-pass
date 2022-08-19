@@ -3,6 +3,7 @@
 set -eu
 
 autotype=0
+fileisuser=0
 help=0
 squash=0
 
@@ -24,6 +25,12 @@ _parse_fields() {
 	fields="$(pass show "$password" | tail -n +2 | cut -d: -f1 -s)"
 	field_list="password
 "
+	if [ "$fileisuser" -eq 1 ]; then
+		has_username=1
+		line="username"
+		field_list="$field_list$line
+"
+	fi
 	for line in $fields; do
 		if [ "$line" = "username" ]; then
 			has_username=1
@@ -55,6 +62,8 @@ _pass_get() {
 		pass show "$password" | { IFS= read -r pass; printf %s "$pass"; }
 	elif [ "$1" = "OTP" ]; then
 		pass otp "$password" | tail -n1 | { IFS= read -r pass; printf %s "$pass"; }
+	elif [ "$fileisuser" -eq 1 ] && [ "$1" = "username" ]; then
+		printf %s "$passname"
 	else
 		_pass_field "$@"
 	fi
@@ -62,20 +71,22 @@ _pass_get() {
 
 _usage() {
 	printf "Usage: wofi-pass [options]\n"
-	printf "	-a, --autotype	autotype whatever entry is chosen\n"
-	printf "	-h, --help	show this help message\n"
-	printf "	-s, --squash	don't show field choice if password file only contains password\n"
-	printf "	-t, --type	type the selection instead of copying to clipboard\n"
+	printf "	-a, --autotype		autotype whatever entry is chosen\n"
+	printf "	-f, --fileisuser	use the name of the password file as username\n"
+	printf "	-h, --help		show this help message\n"
+	printf "	-s, --squash		don't show field choice if password file only contains password\n"
+	printf "	-t, --type		type the selection instead of copying to clipboard\n"
 }
 
-OPTS="$(getopt --options ahst --longoptions autotype,help,squash,type -n 'wofi-pass' -- "$@")"
+OPTS="$(getopt --options afhst --longoptions autotype,fileisuser,help,squash,type -n 'wofi-pass' -- "$@")"
 eval set -- "$OPTS"
 while true; do
   case "$1" in
-    -a | --autotype	) autotype=1; shift ;;
-    -h | --help			) help=1; shift ;;
-    -s | --squash		) squash=1; shift ;;
-		-t | --type			) TYPE_CMD="wtype -"; shift;;
+    -a | --autotype		) autotype=1; shift ;;
+		-f | --fileisuser	) fileisuser=1; shift;;
+    -h | --help				) help=1; shift ;;
+    -s | --squash			) squash=1; shift ;;
+		-t | --type				) TYPE_CMD="wtype -"; shift;;
     -- ) shift; break ;;
     * ) break ;;
   esac
@@ -91,6 +102,11 @@ password_files="$(find . -name "*.gpg" | sed "s/^\.\/\(.*\)\.gpg$/\1/")"
 
 password=$(printf '%s\n' "$password_files" | wofi --dmenu)
 [ -n "$password" ] || exit
+
+if [ "$fileisuser" -eq 1 ]; then
+	passname=$(printf '%s' "$password" | sed "s,.*/\(\),\1,")
+fi
+
 field_list="$(_parse_fields)"
 field_count="$(printf '%s' "$field_list" | wc -l)"
 if [ "$squash" -eq 1 ] && [ "$field_count" -eq 0 ]; then
@@ -100,7 +116,11 @@ elif [ "$autotype" -ne 1 ]; then
 fi
 
 if [ "$field" = "autotype" ] || [ "$autotype" -eq 1 ]; then
-	username=$(_pass_get "username")
+	if [ "$fileisuser" -eq 1 ]; then
+		username="$passname"
+	else
+		username=$(_pass_get "username")
+	fi
 	password=$(_pass_get "password")
 	printf '%s\t%s\n' "$username" "$password" | $TYPE_CMD
 else
