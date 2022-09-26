@@ -142,7 +142,7 @@ elif [ "$autotype" -ne 1 ]; then
 	field=$(printf '%s\n' "$field_list" | wofi --dmenu)
 fi
 
-if [ "$field" = "autotype" ] || [ "$autotype" -eq 1 ]; then
+if [ "$autotype" -eq 1 ] || [ "$field" = "autotype" ]; then
 	if [ "$fileisuser" -eq 1 ]; then
 		username="$passname"
 	else
