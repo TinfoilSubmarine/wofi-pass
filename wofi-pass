@@ -6,6 +6,7 @@ autotype=0
 copyisset=0
 fileisuser=0
 help=0
+onlypassword=0
 squash=0
 typeisset=0
 
@@ -75,11 +76,11 @@ _pass_get() {
 _usage() {
 	printf "Usage: wofi-pass [options]\n"
 	printf "	-a, --autotype		autotype whatever entry is chosen\n"
-	printf "	-c, --copy [cmd]	copy to clipboard. Defaults to wl-copy if no cmd is given.\n"
+	printf "	-c, --copy=[cmd]	copy to clipboard. Defaults to wl-copy if no cmd is given.\n"
 	printf "	-f, --fileisuser	use the name of the password file as username\n"
 	printf "	-h, --help		show this help message\n"
 	printf "	-s, --squash		don't show field choice if password file only contains password\n"
-	printf "	-t, --type [cmd]	type the selection instead of copying to clipboard.\n"
+	printf "	-t, --type=[cmd]	type the selection instead of copying to clipboard.\n"
 	printf "				Defaults to wtype if no cmd is given.\n"
 }
 
@@ -88,25 +89,41 @@ eval set -- "$OPTS"
 while true; do
   case "$1" in
     -a | --autotype		) autotype=1; shift ;;
-		-c | --copy				)
+		-c	)	copyisset=1; copy_cmd="$COPY_CMD"; shift ;;
+		--copy	)
 			copyisset=1
-			if [ -z "$2" ]; then
-				copy_cmd="$COPY_CMD"
+			if [ -n "$2" ]; then
+				if command -v "$2"; then
+					echo "$2"
+					copy_cmd="$2"
+				else
+					printf "Cannot find %s in path, defaulting to %s.\n" "$2" "$COPY_CMD"
+					copy_cmd="$COPY_CMD"
+					shift 2
+				fi
 			else
-				copy_cmd="$2"
-			fi
-			shift 2;;
+				copy_cmd="$COPY_CMD"
+				shift
+			fi ;;
 		-f | --fileisuser	) fileisuser=1; shift;;
     -h | --help				) help=1; shift ;;
     -s | --squash			) squash=1; shift ;;
-		-t | --type				)
+		-t	)	typeisset=1; type_cmd="$TYPE_CMD"; shift ;;
+		--type	)
 			typeisset=1
-			if [ -z "$2" ]; then
-				type_cmd="$TYPE_CMD"
+			if [ -n "$2" ]; then
+				if command -v "$2"; then
+					echo "$2"
+					type_cmd="$2"
+				else
+					printf "Cannot find %s in path, defaulting to %s.\n" "$2" "$TYPE_CMD"
+					type_cmd="$TYPE_CMD"
+					shift 2
+				fi
 			else
-				type_cmd="$2"
-			fi
-			shift 2;;
+				type_cmd="$TYPE_CMD"
+				shift
+			fi ;;
     --	) shift; break;;
     *		) break;;
   esac
@@ -139,8 +156,16 @@ field_list="$(_parse_fields)"
 field_count="$(printf '%s' "$field_list" | wc -l)"
 if [ "$squash" -eq 1 ] && [ "$field_count" -eq 0 ]; then
 	field="password"
+	onlypassword=1
 elif [ "$autotype" -ne 1 ]; then
 	field=$(printf '%s\n' "$field_list" | wofi --dmenu)
+fi
+
+# get the command to output to
+if [ "$typeisset" -eq 1 ]; then
+	output_cmd=$type_cmd
+else
+	output_cmd=$copy_cmd
 fi
 
 if [ "$autotype" -eq 1 ] || [ "$field" = "autotype" ]; then
@@ -150,15 +175,14 @@ if [ "$autotype" -eq 1 ] || [ "$field" = "autotype" ]; then
 		username=$(_pass_get "username")
 	fi
 	password=$(_pass_get "password")
-	if [ "$typeisset" -eq 1 ]; then
-		printf '%s\t%s\n' "$username" "$password" | $type_cmd
+
+	# check if we are autotyping a password-only file
+	if [ "$onlypassword" -eq 1 ]; then
+		printf '%s\n' "$password" | $output_cmd
 	else
-		printf '%s\t%s\n' "$username" "$password" | $copy_cmd
+		printf '%s\t%s\n' "$username" "$password" | $output_cmd
 	fi
+
 else
-	if [ "$typeisset" -eq 1 ]; then
-		_pass_get "$field" | $type_cmd
-	else
-		_pass_get "$field" | $copy_cmd
-	fi
+	_pass_get "$field" | $output_cmd
 fi
