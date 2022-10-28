@@ -122,6 +122,7 @@ if [ "$typeisset" -eq 1 ] && [ "$copyisset" -eq 1 ]; then
 	exit 1
 elif [ "$typeisset" -eq 0 ] && [ "$copyisset" -eq 0 ]; then
 	printf "neither -c/--copy or -t/--type passed. Defaulting to copying with wl-copy."
+	copy_cmd="$COPY_CMD"
 fi
 
 cd "${PASSWORD_STORE_DIR:-$HOME/.password-store}"
