@@ -13,7 +13,7 @@ Copy to clipboard. Defaults to wl-copy if no cmd is given.
 
 * `-f`, `--fileisuser`:
 
-use the name of the password file as username
+Use the name of the password file as username
 
 * `-h`, `--help`:
 
