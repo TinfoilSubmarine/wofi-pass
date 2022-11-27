@@ -5,39 +5,23 @@
 \fBwofi\-pass\fR \- pass support for wofi
 .SH "OPTIONS"
 .TP
-\fB\-a\fR, \fB\-\-autotype\fR:
-
-.P
+\fB\-a\fR, \fB\-\-autotype\fR
 Autotype whatever entry is chosen
 .TP
-\fB\-c\fR, \fB\-\-copy\fR [\fIcmd\fR]:
-
-.P
+\fB\-c\fR, \fB\-\-copy\fR [\fIcmd\fR]
 Copy to clipboard\. Defaults to wl\-copy if no cmd is given\.
 .TP
-\fB\-f\fR, \fB\-\-fileisuser\fR:
-
-.P
+\fB\-f\fR, \fB\-\-fileisuser\fR
 Use the name of the password file as username
 .TP
-\fB\-h\fR, \fB\-\-help\fR:
-
-.P
+\fB\-h\fR, \fB\-\-help\fR
 Show the help message
 .TP
-\fB\-s\fR, \fB\-\-squash\fR:
-
-.P
-Don't show field choice if password file only contains password
-.P
-The \fB\-s | \-\-squash\fR flag tells \fBwofi\-pass\fR to "intelligently" skip the field choice dialogue when there is only a password in the file\.
+\fB\-s\fR, \fB\-\-squash\fR
+Don't show field choice if password file only contains password\.
 .TP
-\fB\-t\fR, \fB\-\-type\fR [\fIcmd\fR]:
-
-.P
-Type the selection instead of copying to clipboard\. Defaults to wtype if no cmd is given\.
-.P
-The \fB\-t | \-\-type\fR flag tells \fBwofi\-pass\fR to type the choice instead of copying to clipboard\. This also enables the autotype choice which types \fBusername :tab password\fR\.
+\fB\-t\fR, \fB\-\-type\fR [\fIcmd\fR]
+Type the selection instead of copying to clipboard\. Defaults to wtype if no cmd is given\. This also enables the autotype choice which types \fBusername :tab password\fR\.
 .SH "PASSWORD FILES"
 \fBwofi\-pass\fR assumes password files are formatted like the following:
 .P
