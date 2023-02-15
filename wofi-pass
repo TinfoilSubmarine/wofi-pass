@@ -93,14 +93,8 @@ while true; do
 		--copy	)
 			copyisset=1
 			if [ -n "$2" ]; then
-				if command -v "$2"; then
-					echo "$2"
-					copy_cmd="$2"
-				else
-					printf "Cannot find %s in path, defaulting to %s.\n" "$2" "$COPY_CMD"
-					copy_cmd="$COPY_CMD"
-					shift 2
-				fi
+				copy_cmd="$2"
+				shift 2
 			else
 				copy_cmd="$COPY_CMD"
 				shift
@@ -112,14 +106,8 @@ while true; do
 		--type	)
 			typeisset=1
 			if [ -n "$2" ]; then
-				if command -v "$2"; then
-					echo "$2"
-					type_cmd="$2"
-				else
-					printf "Cannot find %s in path, defaulting to %s.\n" "$2" "$TYPE_CMD"
-					type_cmd="$TYPE_CMD"
-					shift 2
-				fi
+				type_cmd="$2"
+				shift 2
 			else
 				type_cmd="$TYPE_CMD"
 				shift
