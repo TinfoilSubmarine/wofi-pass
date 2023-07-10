@@ -1,4 +1,4 @@
-# ARCHIVED AS I NO LONGER REGULARLY USE THIS.
+# This is no longer actively maintained. Consider switching to a fork such as [schmidtandreas/wofi-pass](https://github.com/schmidtandreas/wofi-pass).
 
 # wofi-pass
 ```
